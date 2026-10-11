@@ -1,0 +1,32 @@
+# Git Ignore Configuration
+.env
+.env.*
+*.env
+*.pem
+*.key
+credentials.json
+
+# Model weights & large data
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.pkl
+uploads/
+**/uploads/
+test_results/
+**/test_results/
+
+# Python cache & virtualenvs
+__pycache__/
+**/__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+
+# Logs
+*.log
+logs/
+**/logs/

@@ -1,0 +1,16 @@
+Prompt
+   ↓
+Cached Embedding
+──────────────────
+
+Image
+   ↓
+YOLO-style Detector
+   ↓
+Object Proposals
+   ↓
+Embedding Head
+   ↓
+Similarity Matching
+   ↓
+Final Boxes

@@ -1,0 +1,3 @@
+Problem Statement:
+
+To create an AI Image Annotation App that detects the said/asked objects on its own for n images.

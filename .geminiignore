@@ -1,0 +1,62 @@
+# ==============================================================================
+# Google Antigravity Ignore Rules (.geminiignore)
+# Prevents AI agent indexing, context scanning, and transmitting sensitive data.
+# ==============================================================================
+
+# Environment variables, credentials, and secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+client_secret*.json
+secrets/
+
+# Model checkpoints, weights, embeddings, and large artifacts
+*.pt
+*.pth
+*.bin
+*.onnx
+*.h5
+*.safetensors
+*.pkl
+*.pickle
+*.weights
+
+# Data directories and uploads
+uploads/
+**/uploads/
+test_results/
+**/test_results/
+data/
+**/data/
+datasets/
+**/datasets/
+
+# Python execution caches and virtual environments
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# Runtime logs and temporary files
+*.log
+logs/
+**/logs/
+temp/
+tmp/
+*.tmp
+
+# Version control and IDE internal settings
+.git/
+.agents/
+.vscode/
+.idea/

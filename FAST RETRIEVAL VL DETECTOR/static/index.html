@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionLabel AI — Zero-Shot Vision-Language Image Annotation Studio</title>
+    <meta name="description" content="AI Image Annotation App that detects and labels queried objects autonomously across N images using Fast Vision-Language zero-shot retrieval.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-theme">
+    <div id="app" class="app-layout">
+        <!-- Top Application Header -->
+        <header id="main-header" class="app-header">
+            <div class="header-brand">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span class="logo-glow"></span>
+                </div>
+                <div class="brand-text">
+                    <h1 class="brand-title">VisionLabel <span class="brand-highlight">AI</span></h1>
+                    <span class="brand-badge">Fast VL Auto-Annotator</span>
+                </div>
+            </div>
+
+            <div class="header-telemetry">
+                <div class="telemetry-pill" id="status-pill" title="Backend Engine Status">
+                    <span class="status-dot pulsating"></span>
+                    <span id="model-status-text">Engine Ready (FasterRCNN + CLIP)</span>
+                </div>
+                <div class="telemetry-pill" id="latency-pill" title="Average Retrieval Speed">
+                    <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+                    </svg>
+                    <span id="speed-metric">Sub-millisecond Retrieval</span>
+                </div>
+                <div class="telemetry-pill" id="stats-pill" title="Images in Current Session">
+                    <svg class="pill-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span id="image-count-metric">0 Images Loaded</span>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button id="btn-load-samples" class="btn btn-secondary" title="Load pre-bundled diverse test images">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Load Sample Pack</span>
+                </button>
+                <button id="btn-clear-all" class="btn btn-ghost" title="Clear all images and start fresh">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Clear All</span>
+                </button>
+                <button id="btn-open-help" class="btn btn-icon-only" title="Keyboard shortcuts and guide">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Body: 3 Columns -->
+        <main class="app-workspace">
+            <!-- Left Panel: Batch Images Manager -->
+            <aside id="panel-images" class="panel panel-left">
+                <div class="panel-header">
+                    <div class="panel-title-wrap">
+                        <h2 class="panel-title">Image Library</h2>
+                        <span id="badge-total-images" class="counter-badge">0</span>
+                    </div>
+                </div>
+
+                <!-- Drag & Drop Upload Zone -->
+                <div id="drop-zone" class="drop-zone">
+                    <input type="file" id="file-input" multiple accept="image/png,image/jpeg,image/webp,image/avif" class="file-input-hidden">
+                    <div class="drop-zone-content">
+                        <div class="drop-zone-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path>
+                                <path d="M12 12v9"></path>
+                                <path d="m16 16-4-4-4 4"></path>
+                            </svg>
+                        </div>
+                        <p class="drop-zone-text">Drop <strong>N Images (up to 1,000)</strong> here or <span class="browse-link">Browse</span></p>
+                        <p class="drop-zone-hint">PNG, JPG, WEBP, AVIF (Batch upload up to 1,000 images supported)</p>
+                    </div>
+                </div>
+
+                <!-- Upload Progress Indicator (Hidden by default) -->
+                <div id="upload-progress-container" class="batch-progress-container upload-progress hidden">
+                    <div class="progress-info">
+                        <span id="upload-status-text">Uploading images...</span>
+                        <span id="upload-percent-text">0%</span>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div id="upload-bar-fill" class="progress-bar-fill upload-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Batch Action Card -->
+                <div class="batch-action-card">
+                    <button id="btn-batch-annotate" class="btn btn-primary btn-full" disabled>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span id="btn-batch-annotate-text">Annotate All N Images</span>
+                    </button>
+                    <!-- Progress Bar (Hidden by default) -->
+                    <div id="batch-progress-container" class="batch-progress-container hidden">
+                        <div class="progress-info">
+                            <span id="progress-status-text">Processing image 1 of 5...</span>
+                            <span id="progress-percent-text">20%</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Gallery Scrollable List -->
+                <div class="image-gallery-container">
+                    <div id="image-gallery-list" class="image-gallery-list">
+                        <!-- Empty placeholder state -->
+                        <div id="gallery-empty-state" class="empty-state">
+                            <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <p class="empty-title">No images uploaded yet</p>
+                            <p class="empty-desc">Click "Load Sample Pack" or drag multiple images to begin batch auto-annotation.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Panel: Interactive Canvas Studio -->
+            <section id="panel-canvas" class="panel panel-center">
+                <!-- Canvas Top Control Toolbar -->
+                <div class="canvas-toolbar">
+                    <div class="toolbar-group">
+                        <span id="canvas-image-name" class="active-image-title">No image selected</span>
+                        <span id="canvas-image-dims" class="active-image-dims">0 × 0</span>
+                    </div>
+
+                    <div class="toolbar-group center-tools">
+                        <div class="tool-btn-group">
+                            <button id="tool-select" class="tool-btn active" title="Select / Inspect Bounding Box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path>
+                                    <path d="M13 13l6 6"></path>
+                                </svg>
+                            </button>
+                            <button id="tool-draw" class="tool-btn" title="Manually Draw Custom Box">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="zoom-controls">
+                            <button id="btn-zoom-out" class="tool-btn" title="Zoom Out">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </button>
+                            <span id="zoom-level-text" class="zoom-text">100%</span>
+                            <button id="btn-zoom-in" class="tool-btn" title="Zoom In">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+                            </button>
+                            <button id="btn-zoom-fit" class="tool-btn" title="Fit to Viewport">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="toolbar-group">
+                        <label class="toggle-pill" title="Toggle visibility of bounding boxes">
+                            <input type="checkbox" id="toggle-boxes" checked>
+                            <span class="toggle-label">Boxes</span>
+                        </label>
+                        <label class="toggle-pill" title="Toggle labels and confidence badges">
+                            <input type="checkbox" id="toggle-labels" checked>
+                            <span class="toggle-label">Labels</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Main Viewport Canvas Stage -->
+                <div id="viewport-stage" class="viewport-stage">
+                    <div id="canvas-transformer" class="canvas-transformer">
+                        <canvas id="annotation-canvas"></canvas>
+                        <!-- SVG overlay for pixel-perfect vector bounding boxes -->
+                        <svg id="vector-overlay" class="vector-overlay"></svg>
+                    </div>
+
+                    <!-- Crosshair / Coordinates HUD -->
+                    <div id="coords-hud" class="coords-hud">X: 0 | Y: 0</div>
+
+                    <!-- Floating Selected Box Modifier Card (Hidden in favor of direct handle and middle-point manipulation) -->
+                    <div id="box-inspector-tooltip" class="box-tooltip hidden" style="display: none !important;">
+                        <div class="tooltip-header">
+                            <div class="tooltip-title-wrap">
+                                <span class="tooltip-color-dot" id="tooltip-color-dot"></span>
+                                <input type="text" id="tooltip-label-input" class="tooltip-label-input" placeholder="Object Label" title="Edit object query label">
+                            </div>
+                            <button id="tooltip-delete-btn" class="tooltip-close" title="Delete detection (Del)">×</button>
+                        </div>
+                        <div class="tooltip-meta">
+                            <span>Sim: <strong id="tooltip-sim">0%</strong></span>
+                            <span>Conf: <strong id="tooltip-conf">0%</strong></span>
+                        </div>
+                        <!-- Bounding Box Coordinate Inputs -->
+                        <div class="box-coord-grid">
+                            <div class="coord-field">
+                                <span class="coord-label">X1</span>
+                                <input type="number" id="box-edit-x1" class="coord-input" step="1">
+                            </div>
+                            <div class="coord-field">
+                                <span class="coord-label">Y1</span>
+                                <input type="number" id="box-edit-y1" class="coord-input" step="1">
+                            </div>
+                            <div class="coord-field">
+                                <span class="coord-label">W</span>
+                                <input type="number" id="box-edit-w" class="coord-input" step="1" min="5">
+                            </div>
+                            <div class="coord-field">
+                                <span class="coord-label">H</span>
+                                <input type="number" id="box-edit-h" class="coord-input" step="1" min="5">
+                            </div>
+                        </div>
+                        <div class="tooltip-footer">
+                            <span class="tooltip-hint">Drag box to move • Drag handles to resize</span>
+                            <button id="btn-save-box-edit" class="btn-save-box" title="Apply changes">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas Bottom Navigation Bar -->
+                <div class="canvas-footer">
+                    <div class="nav-cluster">
+                        <button id="btn-prev-image" class="btn btn-secondary btn-sm" title="Previous Image (Left Arrow)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            <span>Previous</span>
+                        </button>
+                        <span id="image-pagination-text" class="pagination-text">Image 0 of 0</span>
+                        <button id="btn-next-image" class="btn btn-secondary btn-sm" title="Next Image (Right Arrow)">
+                            <span>Next</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+
+                    <div class="keyboard-hints">
+                        <span class="key-hint"><kbd>Left-Click</kbd> Drag side middle points or corners to resize</span>
+                        <span class="key-hint"><kbd>Drag</kbd> to Move</span>
+                        <span class="key-hint"><kbd>Del</kbd> to Delete</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Prompts, Fine-Tuning & Export -->
+            <aside id="panel-controls" class="panel panel-right">
+                <!-- Query Prompt Management Section -->
+                <div class="control-section">
+                    <div class="section-header">
+                        <div class="section-title-wrap">
+                            <h2 class="section-title">Query Prompts</h2>
+                            <span class="section-subtitle">Objects to detect autonomously</span>
+                        </div>
+                    </div>
+
+                    <div class="query-input-container">
+                        <div class="input-with-button">
+                            <input type="text" id="query-input" placeholder="e.g. dog, car, person, traffic light" autocomplete="off">
+                            <button id="btn-add-query" class="btn btn-primary btn-sm">Add</button>
+                        </div>
+                        <p class="input-hint">Type comma-separated prompts or press Enter to add</p>
+                    </div>
+
+                    <!-- Query Tag Chips -->
+                    <div id="query-chips-list" class="query-chips-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+
+                    <!-- Presets Selector -->
+                    <div class="presets-container">
+                        <span class="presets-label">Quick Presets:</span>
+                        <div class="preset-buttons">
+                            <button class="preset-pill" data-preset="dog, cat, collar, pet">🐾 Pets</button>
+                            <button class="preset-pill" data-preset="taxi, car, traffic light, street sign, person">🚗 Urban Traffic</button>
+                            <button class="preset-pill" data-preset="headphones, keyboard, notebook, desk">💻 Office Desk</button>
+                            <button class="preset-pill" data-preset="sink, cabinet, faucet, plate, bottle">🍽️ Kitchen</button>
+                        </div>
+                    </div>
+
+                    <!-- Single Image Action -->
+                    <button id="btn-detect-current" class="btn btn-secondary btn-full mt-2" disabled>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <span>Detect on Current Image</span>
+                    </button>
+                </div>
+
+                <!-- Detection Thresholds Section -->
+                <div class="control-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Detection Thresholds</h2>
+                    </div>
+
+                    <div class="slider-field">
+                        <div class="slider-header">
+                            <label for="similarity-slider">Similarity Threshold</label>
+                            <span id="similarity-value" class="slider-val">0.20</span>
+                        </div>
+                        <input type="range" id="similarity-slider" min="0.05" max="0.60" step="0.01" value="0.20" class="custom-slider">
+                        <span class="slider-caption">Cosine similarity between visual proposal & prompt</span>
+                    </div>
+
+                    <div class="slider-field">
+                        <div class="slider-header">
+                            <label for="iou-slider">NMS Overlap (IoU)</label>
+                            <span id="iou-value" class="slider-val">0.40</span>
+                        </div>
+                        <input type="range" id="iou-slider" min="0.10" max="0.80" step="0.05" value="0.40" class="custom-slider">
+                        <span class="slider-caption">Non-maximum suppression overlap suppression</span>
+                    </div>
+                </div>
+
+                <!-- Detections Inspector Section -->
+                <div class="control-section flex-grow-section">
+                    <div class="section-header">
+                        <div class="section-title-wrap">
+                            <h2 class="section-title">Detections</h2>
+                            <span id="detections-count-badge" class="counter-badge">0</span>
+                        </div>
+                    </div>
+
+                    <div id="detections-list-container" class="detections-list-container">
+                        <div id="detections-empty-state" class="empty-state small">
+                            <p class="empty-title">No detections yet</p>
+                            <p class="empty-desc">Click "Detect" to find queried objects.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Studio Section -->
+                <div class="control-section export-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Export Dataset</h2>
+                    </div>
+
+                    <div class="export-grid">
+                        <button id="btn-export-coco" class="btn btn-outline btn-export" title="Standard COCO 1.0 JSON format for training pipelines">
+                            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <span>COCO 1.0 (JSON)</span>
+                        </button>
+
+                        <button id="btn-export-yolo" class="btn btn-outline btn-export" title="Standard YOLO formatted txt labels & classes.txt ZIP">
+                            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                                <rect x="1" y="3" width="22" height="5"></rect>
+                                <line x1="10" y1="12" x2="14" y2="12"></line>
+                            </svg>
+                            <span>YOLO (ZIP)</span>
+                        </button>
+
+                        <button id="btn-export-json" class="btn btn-outline btn-export" title="Complete structured JSON with full metrics & scores">
+                            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 17l6-6-6-6"></path>
+                                <path d="M12 19h8"></path>
+                            </svg>
+                            <span>Full JSON</span>
+                        </button>
+
+                        <button id="btn-export-images" class="btn btn-outline btn-export" title="ZIP of all images with bounding boxes visually rendered">
+                            <svg class="export-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <span>Rendered Images (ZIP)</span>
+                        </button>
+                    </div>
+
+                    <button id="btn-save-current" class="btn btn-secondary btn-full mt-2" title="Download currently viewed annotated image">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Download Current Image</span>
+                    </button>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Help Modal Dialog -->
+        <div id="help-modal" class="modal-backdrop hidden">
+            <div class="modal-dialog">
+                <div class="modal-header">
+                    <h3 class="modal-title">VisionLabel AI — User Guide</h3>
+                    <button id="btn-close-help" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <h4>Workflow Overview</h4>
+                    <ol>
+                        <li><strong>Load Images:</strong> Drag & drop $N$ images into the left dropzone, or click <em>Load Sample Pack</em> to experiment with pre-bundled scenarios.</li>
+                        <li><strong>Define Target Prompts:</strong> Type queried objects in the right panel (e.g. <code>dog</code>, <code>car</code>, <code>traffic light</code>). The system caches prompt embeddings in &lt;1ms.</li>
+                        <li><strong>Run Auto-Annotation:</strong> Click <em>Annotate All N Images</em> to autonomously detect and annotate all loaded images.</li>
+                        <li><strong>Review & Adjust:</strong> Use the canvas to inspect bounding boxes, adjust the Similarity slider to filter sensitivity, or manually draw/delete boxes.</li>
+                        <li><strong>Export:</strong> Download standard <strong>COCO 1.0</strong>, <strong>YOLO format ZIP</strong>, or <strong>Rendered Annotated Images</strong>.</li>
+                    </ol>
+
+                    <h4 class="mt-3">Keyboard Shortcuts</h4>
+                    <table class="shortcuts-table">
+                        <tr><td><kbd>→</kbd> / <kbd>←</kbd></td><td>Next / Previous Image</td></tr>
+                        <tr><td><kbd>Space</kbd> + Drag</td><td>Pan Canvas</td></tr>
+                        <tr><td><kbd>Scroll</kbd></td><td>Zoom In / Out</td></tr>
+                        <tr><td><kbd>Del</kbd> / <kbd>Backspace</kbd></td><td>Delete Selected Box</td></tr>
+                        <tr><td><kbd>Enter</kbd></td><td>Trigger Detection on Current Image</td></tr>
+                        <tr><td><kbd>Esc</kbd></td><td>Deselect Bounding Box</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
